@@ -211,7 +211,7 @@ def build_datasets(args):
 
 def build_dataloaders(train_dataset, val_dataset, batch_size):
     cpu_count = os.cpu_count() or 1
-    num_workers = min(32, cpu_count)
+    num_workers = min(16, cpu_count)
     pin_memory = torch.cuda.is_available()
 
     train_loader = DataLoader(
@@ -376,9 +376,9 @@ def evaluate_predictions(preds, targets, labels, ignore_class=0):
     return metrics_v, metrics_scalar
 
 
-def save_metrics(log_dir, filename, metrics_v, metrics_scalar, classes):
+def save_metrics(exp_dir, filename, metrics_v, metrics_scalar, classes):
     cls_names = np.array(classes)[metrics_v["labels"]]
-    out_path = log_dir / filename
+    out_path = exp_dir / filename
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(out_path, "w") as f:
@@ -556,8 +556,8 @@ def load_or_compute_class_weights(args, train_dataset, out_classes):
     return counts, weights, cache_path
 
 
-def save_class_weight_report(log_dir, counts, weights, classes, ignore_index, cache_path):
-    out_path = log_dir / "class_weights.txt"
+def save_class_weight_report(exp_dir, counts, weights, classes, ignore_index, cache_path):
+    out_path = exp_dir / "class_weights.txt"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(out_path, "w") as f:
@@ -635,9 +635,9 @@ def main():
     seed_everything(args.seed)
 
     device = get_device()
-    log_dir = Path("logs") / args.arch / args.dataset / "train"
-    ckpt_dir = log_dir / "checkpoints"
-    metrics_csv = log_dir / "metrics.csv"
+    exp_dir = Path("exp") / args.arch / args.dataset / "train"
+    ckpt_dir = exp_dir / "checkpoints"
+    metrics_csv = exp_dir / "metrics.csv"
 
     train_dataset, val_dataset, classes, in_channels, out_classes = build_datasets(args)
     train_loader, val_loader = build_dataloaders(
@@ -663,7 +663,7 @@ def main():
         print("Class weights:", [float(v) for v in class_weights.cpu().tolist()])
 
         save_class_weight_report(
-            log_dir=log_dir,
+            exp_dir=exp_dir,
             counts=class_counts.cpu(),
             weights=class_weights.cpu(),
             classes=classes,
@@ -770,7 +770,7 @@ def main():
             args,
         )
         save_weights(
-            log_dir / "weights" / "last.pt",
+            exp_dir / "weights" / "last.pt",
             model,
         )
 
@@ -785,11 +785,11 @@ def main():
                 args,
             )
             save_weights(
-                log_dir / "weights" / "best.pt",
+                exp_dir / "weights" / "best.pt",
                 model,
             )
             save_metrics(
-                log_dir,
+                exp_dir,
                 "best_result.txt",
                 metrics_v,
                 metrics_scalar,
@@ -797,7 +797,7 @@ def main():
             )
 
             if args.use_class_weights:
-                best_weight_info_path = log_dir / "best_class_weights.json"
+                best_weight_info_path = exp_dir / "best_class_weights.json"
                 best_weight_info_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(best_weight_info_path, "w") as f:
                     json.dump(

@@ -3,6 +3,7 @@ set -euo pipefail
 
 SESSION_NAME="${1:-train_runs}"
 MODE="${2:-start}"   # start | resume
+DELAY="${60:-2}"      # seconds between job launches
 
 ARCHS=("deeplabv3" "fpn" "swin_unetr" "unet")
 DATASETS=("munich" "lombardia")
@@ -37,7 +38,11 @@ for dataset in "${DATASETS[@]}"; do
     tmux send-keys -t "${SESSION_NAME}:${window_name}" "$cmd" C-m
 
     echo "[train] ${window_name} -> GPU ${gpu}"
+
     job_idx=$((job_idx + 1))
+
+    # delay to avoid resource spikes
+    sleep "$DELAY"
   done
 done
 

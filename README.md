@@ -34,17 +34,17 @@ export KAGGLE_API_TOKEN=KGAT_...
 
 ## 📦 Datasets (auto-downloaded)
 
--   🇩🇪 Munich dataset\
+-   :de: Munich dataset\
     https://www.kaggle.com/datasets/artelabsuper/sentinel2-munich480
 
--   🇮🇹 Lombardia dataset\
+-   :it: Lombardia dataset\
     https://www.kaggle.com/datasets/ignazio/sentinel2-crop-mapping
 
 ------------------------------------------------------------------------
 
 ## 🚀 Training
 
-### 🇩🇪 Munich
+### :de: Munich
 
 ``` shell
 CUDA_VISIBLE_DEVICES=0 python train.py --arch deeplabv3 --dataset munich
@@ -56,15 +56,15 @@ CUDA_VISIBLE_DEVICES=3 python train.py --arch unet --dataset munich
 ### 🔁 Munich resume
 
 ``` shell
-CUDA_VISIBLE_DEVICES=0 python train.py --arch deeplabv3 --dataset munich --ckpt_path ./logs/deeplabv3/munich/train/checkpoints/last.ckpt
-CUDA_VISIBLE_DEVICES=1 python train.py --arch fpn --dataset munich --ckpt_path ./logs/fpn/munich/train/checkpoints/last.ckpt 
-CUDA_VISIBLE_DEVICES=2 python train.py --arch swin_unetr --dataset munich --ckpt_path ./logs/swin_unetr/munich/train/checkpoints/last.ckpt
-CUDA_VISIBLE_DEVICES=3 python train.py --arch unet --dataset munich --ckpt_path ./logs/unet/munich/train/checkpoints/last.ckpt
+CUDA_VISIBLE_DEVICES=0 python train.py --arch deeplabv3 --dataset munich --ckpt_path exp/deeplabv3/munich/train/checkpoints/last.ckpt
+CUDA_VISIBLE_DEVICES=1 python train.py --arch fpn --dataset munich --ckpt_path exp/fpn/munich/train/checkpoints/last.ckpt 
+CUDA_VISIBLE_DEVICES=2 python train.py --arch swin_unetr --dataset munich --ckpt_path exp/swin_unetr/munich/train/checkpoints/last.ckpt
+CUDA_VISIBLE_DEVICES=3 python train.py --arch unet --dataset munich --ckpt_path exp/unet/munich/train/checkpoints/last.ckpt
 ```
 
 ------------------------------------------------------------------------
 
-### 🇮🇹 Lombardia
+### :it: Lombardia
 
 ``` shell
 CUDA_VISIBLE_DEVICES=0 python train.py --arch deeplabv3 --dataset lombardia
@@ -76,41 +76,51 @@ CUDA_VISIBLE_DEVICES=3 python train.py --arch unet --dataset lombardia
 ### 🔁 Lombardia resume
 
 ``` shell
-CUDA_VISIBLE_DEVICES=0 python train.py --arch deeplabv3 --dataset lombardia --ckpt_path ./logs/deeplabv3/lombardia/train/checkpoints/last.ckpt
-CUDA_VISIBLE_DEVICES=1 python train.py --arch fpn --dataset lombardia --ckpt_path ./logs/fpn/lombardia/train/checkpoints/last.ckpt
-CUDA_VISIBLE_DEVICES=2 python train.py --arch swin_unetr --dataset lombardia --ckpt_path ./logs/swin_unetr/lombardia/train/checkpoints/last.ckpt
-CUDA_VISIBLE_DEVICES=3 python train.py --arch unet --dataset lombardia --ckpt_path ./logs/unet/lombardia/train/checkpoints/last.ckpt
+CUDA_VISIBLE_DEVICES=0 python train.py --arch deeplabv3 --dataset lombardia --ckpt_path exp/deeplabv3/lombardia/train/checkpoints/last.ckpt
+CUDA_VISIBLE_DEVICES=1 python train.py --arch fpn --dataset lombardia --ckpt_path exp/fpn/lombardia/train/checkpoints/last.ckpt
+CUDA_VISIBLE_DEVICES=2 python train.py --arch swin_unetr --dataset lombardia --ckpt_path exp/swin_unetr/lombardia/train/checkpoints/last.ckpt
+CUDA_VISIBLE_DEVICES=3 python train.py --arch unet --dataset lombardia --ckpt_path exp/unet/lombardia/train/checkpoints/last.ckpt
 ```
 
 ------------------------------------------------------------------------
 
 ## 🧪 Evaluation
 
-### 🇩🇪 Munich
+### :de: Munich
 
 ``` shell
-CUDA_VISIBLE_DEVICES=0 python test.py --arch deeplabv3 --dataset munich --ckpt_path ./pretrained/deeplab_munich.ckpt
-CUDA_VISIBLE_DEVICES=1 python test.py --arch fpn --dataset munich --ckpt_path ./pretrained/fpn_munich.ckpt
-CUDA_VISIBLE_DEVICES=2 python test.py --arch swin_unetr --dataset munich --ckpt_path ./pretrained/swin_munich.ckpt
-CUDA_VISIBLE_DEVICES=3 python test.py --arch unet --dataset munich --ckpt_path ./pretrained/unet_munich.ckpt
+CUDA_VISIBLE_DEVICES=0 python test.py --arch deeplabv3 --dataset munich --weights_path exp/deeplabv3/munich/weights/best.pt
+CUDA_VISIBLE_DEVICES=1 python test.py --arch fpn --dataset munich --weights_path exp/fpn/munich/weights/best.pt
+CUDA_VISIBLE_DEVICES=2 python test.py --arch swin_unetr --dataset munich --weights_path exp/swin_unetr/munich/weights/best.pt
+CUDA_VISIBLE_DEVICES=3 python test.py --arch unet --dataset munich --weights_path exp/unet/munich/weights/best.pt
 ```
 
-### 🇮🇹 Lombardia A
+### :it: Lombardia A
 
 ``` shell
-CUDA_VISIBLE_DEVICES=0 python test.py --arch deeplabv3 --dataset lombardia --test_id A --ckpt_path ./pretrained/deeplab_lombardia.ckpt
-CUDA_VISIBLE_DEVICES=1 python test.py --arch fpn --dataset lombardia --test_id A --ckpt_path ./pretrained/fpn_lombardia.ckpt
-CUDA_VISIBLE_DEVICES=2 python test.py --arch swin_unetr --dataset lombardia --test_id A --ckpt_path ./pretrained/swin_lombardia.ckpt
-CUDA_VISIBLE_DEVICES=3 python test.py --arch unet --dataset lombardia --test_id A --ckpt_path ./pretrained/unet_lombardia.ckpt
+CUDA_VISIBLE_DEVICES=0 python test.py --arch deeplabv3 --dataset lombardia --test_id A --weights_path exp/deeplabv3/lombardia/weights/best.pt
+CUDA_VISIBLE_DEVICES=1 python test.py --arch fpn --dataset lombardia --test_id A --weights_path exp/fpn/lombardia/weights/best.pt
+CUDA_VISIBLE_DEVICES=2 python test.py --arch swin_unetr --dataset lombardia --test_id A --weights_path exp/swin_unetr/lombardia/weights/best.pt
+CUDA_VISIBLE_DEVICES=3 python test.py --arch unet --dataset lombardia --test_id A --weights_path exp/unet/lombardia/weights/best.pt
 ```
 
-### 🇮🇹 Lombardia Y
+### :it: Lombardia Y
 
 ``` shell
-CUDA_VISIBLE_DEVICES=0 python test.py --arch deeplabv3 --dataset lombardia --test_id Y --ckpt_path ./pretrained/deeplab_lombardia.ckpt
-CUDA_VISIBLE_DEVICES=1 python test.py --arch fpn --dataset lombardia --test_id Y --ckpt_path ./pretrained/fpn_lombardia.ckpt
-CUDA_VISIBLE_DEVICES=2 python test.py --arch swin_unetr --dataset lombardia --test_id Y --ckpt_path ./pretrained/swin_lombardia.ckpt
-CUDA_VISIBLE_DEVICES=3 python test.py --arch unet --dataset lombardia --test_id Y --ckpt_path ./pretrained/unet_lombardia.ckpt
+CUDA_VISIBLE_DEVICES=0 python test.py --arch deeplabv3 --dataset lombardia --test_id Y --weights_path exp/deeplabv3/lombardia/weights/best.pt
+CUDA_VISIBLE_DEVICES=1 python test.py --arch fpn --dataset lombardia --test_id Y --weights_path exp/fpn/lombardia/weights/best.pt
+CUDA_VISIBLE_DEVICES=2 python test.py --arch swin_unetr --dataset lombardia --test_id Y --weights_path exp/swin_unetr/lombardia/weights/best.pt
+CUDA_VISIBLE_DEVICES=3 python test.py --arch unet --dataset lombardia --test_id Y --weights_path exp/unet/lombardia/weights/best.pt
+```
+
+### Export sample RGB time series
+``` shell
+python -m misc.export_samples_rgb --dataset munich
+```
+
+### Run inference and merge patches into a full segmentation map
+``` shell
+CUDA_VISIBLE_DEVICES=0 python inference.py --arch unet --dataset lombardia --test_id A --save_tifs --merge_patches
 ```
 
 ------------------------------------------------------------------------
@@ -121,4 +131,4 @@ CUDA_VISIBLE_DEVICES=3 python test.py --arch unet --dataset lombardia --test_id 
 -   🔐 Make sure credentials are set before running
 -   🎯 `CUDA_VISIBLE_DEVICES` controls GPU selection
 -   📁 Logs and checkpoints are saved under
-    `logs/<arch>/<dataset>/train/`
+    `exp/<arch>/<dataset>/train/`

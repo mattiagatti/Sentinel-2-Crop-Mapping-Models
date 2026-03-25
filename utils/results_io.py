@@ -12,25 +12,33 @@ NODATA_VALUE = 255
 
 
 MUNICH_COLORS = [
-    (1, "Beet", ImageColor.getcolor("#000000", "RGB")),
-    (2, "Oat", ImageColor.getcolor("#4E4D4B", "RGB")),
-    (3, "Meadow", ImageColor.getcolor("#015293", "RGB")),
-    (4, "Rape", ImageColor.getcolor("#98C6EA", "RGB")),
-    (6, "Spelt", ImageColor.getcolor("#DAD8CB", "RGB")),
-    (9, "Peas", ImageColor.getcolor("#69075A", "RGB")),
-    (13, "Wheat", ImageColor.getcolor("#689A1D", "RGB")),
-    (16, "S.Barley", ImageColor.getcolor("#D74C13", "RGB")),
-    (17, "Maize", ImageColor.getcolor("#C5481C", "RGB")),
+    (1,  "Beet",       ImageColor.getcolor("#2B2B2B", "RGB")),  # dark neutral
+    (2,  "Oat",        ImageColor.getcolor("#6E6A61", "RGB")),  # muted warm gray
+    (3,  "Meadow",     ImageColor.getcolor("#1F78B4", "RGB")),  # clear blue
+    (4,  "Rape",       ImageColor.getcolor("#FFD92F", "RGB")),  # bright yellow
+    (5,  "Hop",        ImageColor.getcolor("#1B9E77", "RGB")),  # saturated green
+    (6,  "Spelt",      ImageColor.getcolor("#E5D8BD", "RGB")),  # pale straw
+    (7,  "Triticale",  ImageColor.getcolor("#A6761D", "RGB")),  # ochre brown
+    (8,  "Beans",      ImageColor.getcolor("#D73027", "RGB")),  # strong red
+    (9,  "Peas",       ImageColor.getcolor("#762A83", "RGB")),  # purple
+    (10, "Potato",     ImageColor.getcolor("#8C510A", "RGB")),  # earthy brown
+    (11, "Soybeans",   ImageColor.getcolor("#66A61E", "RGB")),  # olive green
+    (12, "Asparagus",  ImageColor.getcolor("#66C2A5", "RGB")),  # fresh mint
+    (13, "Wheat",      ImageColor.getcolor("#E6AB02", "RGB")),  # golden wheat
+    (14, "W. Barley",  ImageColor.getcolor("#FC8D62", "RGB")),  # warm apricot
+    (15, "Rye",        ImageColor.getcolor("#B2DF8A", "RGB")),  # light green
+    (16, "S. Barley",  ImageColor.getcolor("#F46D43", "RGB")),  # orange-red
+    (17, "Maize",      ImageColor.getcolor("#D95F02", "RGB")),  # vivid orange
 ]
 
 LOMBARDIA_COLORS = [
-    (1, "Cereals", ImageColor.getcolor("#FF0000", "RGB")),
-    (2, "Woods", ImageColor.getcolor("#00FF00", "RGB")),
-    (3, "Forage", ImageColor.getcolor("#FEA500", "RGB")),
-    (4, "Corn", ImageColor.getcolor("#FFFF00", "RGB")),
-    (5, "Rice", ImageColor.getcolor("#00FFFF", "RGB")),
-    (6, "Unk. Crop", ImageColor.getcolor("#BEBEBE", "RGB")),
-    (7, "No agric", ImageColor.getcolor("#000000", "RGB")),
+    (1, "Cereals",   ImageColor.getcolor("#E6AB02", "RGB")),  # same as wheat
+    (2, "Woods",     ImageColor.getcolor("#1B9E77", "RGB")),  # same as hop/forest
+    (3, "Forage",    ImageColor.getcolor("#66C2A5", "RGB")),  # same as meadow
+    (4, "Corn",      ImageColor.getcolor("#D95F02", "RGB")),  # same as maize family
+    (5, "Rice",      ImageColor.getcolor("#1F78B4", "RGB")),  # water/blue
+    (6, "Unk. Crop", ImageColor.getcolor("#BDBDBD", "RGB")),  # neutral
+    (7, "No agric",  ImageColor.getcolor("#252525", "RGB")),  # dark neutral
 ]
 
 

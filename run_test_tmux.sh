@@ -2,6 +2,7 @@
 set -euo pipefail
 
 SESSION_NAME="${1:-test_runs}"
+DELAY="${60:-2}"   # seconds between job launches
 
 ARCHS=("deeplabv3" "fpn" "swin_unetr" "unet")
 GPUS=(0 1 2 3 4 5 6 7)
@@ -41,8 +42,6 @@ for job in "${JOBS[@]}"; do
   gpu="${GPUS[$((job_idx % ${#GPUS[@]}))]}"
 
   if [[ "$dataset" == "munich" ]]; then
-    arch="$maybe_test_id"
-    ckpt="$arch"
     IFS=":" read -r dataset arch ckpt <<< "$job"
 
     window_name="${dataset}_${arch}"
@@ -59,7 +58,11 @@ for job in "${JOBS[@]}"; do
   tmux send-keys -t "${SESSION_NAME}:${window_name}" "$cmd" C-m
 
   echo "[test] ${window_name} -> GPU ${gpu}"
+
   job_idx=$((job_idx + 1))
+
+  # ⏱️ delay to avoid spikes
+  sleep "$DELAY"
 done
 
 tmux kill-window -t "${SESSION_NAME}:launcher"
