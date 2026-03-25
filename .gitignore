@@ -1,0 +1,10 @@
+__pycache__
+.ipynb_checkpoints
+.venv
+cache
+logs
+pretrained
+results
+sentinel2-crop-mapping
+sentinel2-munich480
+weights

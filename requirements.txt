@@ -1,0 +1,10 @@
+einops
+kaggle
+matplotlib
+monai==1.5.2
+numpy
+Pillow
+rasterio
+scikit-learn
+torch
+tqdm
