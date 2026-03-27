@@ -426,6 +426,30 @@ def get_dataset_identifier(args):
     return f"{args.dataset}_fold0"
 
 
+def get_exp_dir(args):
+    if not args.use_class_weights:
+        run_name = "train"
+    else:
+        clip_str = "none" if args.class_weight_max <= 0 else str(args.class_weight_max)
+
+        parts = [
+            "train_weighted",
+            f"mode-{args.class_weight_mode}",
+            f"clip-{clip_str}",
+        ]
+
+        # include ignore_index only if not default
+        if args.ignore_index != 0:
+            parts.append(f"ignore-{args.ignore_index}")
+
+        if args.class_weight_mode == "effective_num":
+            parts.append(f"beta-{args.effective_num_beta:.4f}")
+
+        run_name = "__".join(parts)
+
+    return Path("exp") / args.arch / args.dataset / run_name
+
+
 def get_class_weight_cache_path(args, out_classes):
     dataset_id = get_dataset_identifier(args)
     clip_str = "none" if args.class_weight_max <= 0 else str(args.class_weight_max)
@@ -635,7 +659,7 @@ def main():
     seed_everything(args.seed)
 
     device = get_device()
-    exp_dir = Path("exp") / args.arch / args.dataset / "train"
+    exp_dir = get_exp_dir(args)
     ckpt_dir = exp_dir / "checkpoints"
     metrics_csv = exp_dir / "metrics.csv"
 
