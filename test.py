@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from fvcore.nn import FlopCountAnalysis, flop_count_table
 from sklearn.metrics import (
     cohen_kappa_score,
     confusion_matrix,
@@ -58,6 +59,24 @@ def build_model(arch, depth, in_channels, out_classes):
     if arch == "unet":
         return UNet_3D(depth=depth, in_channels=in_channels, out_classes=out_classes)
     raise ValueError(f"Unsupported architecture: {arch}")
+
+
+def print_model_stats(model, loader, device):
+    model.eval()
+
+    x, _, _ = next(iter(loader))
+    x = x.to(device)
+
+    total_params = sum(p.numel() for p in model.parameters())
+    size_mb = total_params * 4 / (1024 ** 2)
+
+    flops = FlopCountAnalysis(model, x).total()
+
+    print("\nModel stats:")
+    print(f"Params: {total_params:,}")
+    print(f"Size (MB): {size_mb:.2f}")
+    print(f"FLOPs: {flops:,}")
+    print(f"FLOPs (GFLOPs): {flops / 1e9:.3f}")
 
 
 def build_test_dataset(args):
@@ -116,7 +135,8 @@ def build_test_loader(test_dataset, batch_size):
 def resolve_weights_path(args):
     if args.weights_path is not None:
         return args.weights_path
-    return Path("weights") / f"{args.arch}_{args.dataset}.pt"
+
+    return Path("exp") / args.arch / args.dataset / "train" / "weights" / "best.pt"
 
 
 def load_weights(path, model, device):
@@ -136,6 +156,11 @@ def load_weights(path, model, device):
 def evaluate_predictions(preds, targets, labels, ignore_class=0):
     preds = np.concatenate(preds)
     targets = np.concatenate(targets)
+
+    if preds.shape != targets.shape:
+        raise ValueError(
+            f"Predictions and targets must have the same shape, got {preds.shape} and {targets.shape}"
+        )
 
     if ignore_class is not None:
         mask = targets != ignore_class
@@ -214,7 +239,17 @@ def evaluate(model, loader, out_classes, device):
         y = y.to(device)
 
         y_hat = model(x)
+
+        if y_hat.ndim == 3:
+            y_hat = y_hat.unsqueeze(0)
+
+        if y_hat.ndim != 4:
+            raise ValueError(f"Unexpected y_hat shape: {y_hat.shape}")
+
         y_pred = torch.argmax(y_hat, dim=1)
+
+        if y_pred.shape != y.shape:
+            raise ValueError(f"Shape mismatch: y_pred {y_pred.shape} vs y {y.shape}")
 
         all_preds.append(y_pred.cpu().numpy().reshape(-1))
         all_targets.append(y.cpu().numpy().reshape(-1))
@@ -252,6 +287,8 @@ def main():
 
     model = load_weights(weights_path, model, device)
     print(f"Loaded weights from {weights_path}")
+
+    print_model_stats(model, test_loader, device)
 
     metrics_v, metrics_scalar = evaluate(
         model=model,

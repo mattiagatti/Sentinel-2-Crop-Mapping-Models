@@ -59,19 +59,6 @@ def normalize_filename(filename: str, dataset_key: str) -> Path:
     return path
 
 
-def apply_cmap(x: np.ndarray, cmap: str) -> np.ndarray:
-    if x.ndim != 2:
-        raise ValueError(f"Expected a 2D array, got shape {x.shape}")
-
-    colors = get_color_definitions(cmap)
-    y = np.full((x.shape[0], x.shape[1], 3), fill_value=255, dtype=np.uint8)
-
-    for class_id, _, rgb in colors:
-        y[x == class_id] = rgb
-
-    return y
-
-
 def compute_difference_mask(pred: np.ndarray, target: np.ndarray) -> np.ndarray:
     pred = np.asarray(pred)
     target = np.asarray(target)
@@ -82,7 +69,7 @@ def compute_difference_mask(pred: np.ndarray, target: np.ndarray) -> np.ndarray:
         )
 
     diff = pred != target
-    diff[target == 0] = False
+    diff[(target == 0) | (target == NODATA_VALUE)] = False
     return diff.astype(np.uint8)
 
 
@@ -94,24 +81,6 @@ def difference_to_rgb(diff: np.ndarray) -> np.ndarray:
     rgb = np.zeros((diff.shape[0], diff.shape[1], 3), dtype=np.uint8)
     rgb[diff.astype(bool)] = np.array([255, 255, 255], dtype=np.uint8)
     return rgb
-
-
-def save_png(mask: np.ndarray, out_path: Path, cmap: str) -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    rgb = apply_cmap(np.asarray(mask), cmap)
-    Image.fromarray(rgb).save(out_path)
-
-
-def save_difference_png(pred: np.ndarray, target: np.ndarray, out_path: Path) -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    diff = compute_difference_mask(pred, target)
-    diff_rgb = difference_to_rgb(diff)
-    Image.fromarray(diff_rgb).save(out_path)
-
-
-def get_patch_output_dir(arch: str, dataset_key: str, filename: str) -> Path:
-    rel_path = normalize_filename(filename, dataset_key)
-    return RESULTS_PATH / arch / dataset_key / rel_path
 
 
 def save_tif(
@@ -131,6 +100,7 @@ def save_tif(
     pred_out_path = patch_dir / "pred.tif"
     target_out_path = patch_dir / "truth.tif"
     pred_png_out_path = patch_dir / "pred.png"
+    pred_unk_png_out_path = patch_dir / "pred_unk.png"
     target_png_out_path = patch_dir / "truth.png"
     diff_png_out_path = patch_dir / "diff.png"
 
@@ -147,9 +117,60 @@ def save_tif(
     with rasterio.open(target_out_path, "w", **profile) as dst:
         dst.write(target, 1)
 
+    gt_unknown_mask = (target == 0) | (target == NODATA_VALUE)
+
     save_png(pred, pred_png_out_path, cmap)
+    save_png(pred, pred_unk_png_out_path, cmap, white_mask=gt_unknown_mask)
     save_png(target, target_png_out_path, cmap)
     save_difference_png(pred, target, diff_png_out_path)
+
+
+def save_difference_png(pred: np.ndarray, target: np.ndarray, out_path: Path) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    diff = compute_difference_mask(pred, target)
+    diff_rgb = difference_to_rgb(diff)
+    Image.fromarray(diff_rgb).save(out_path)
+
+
+def get_patch_output_dir(arch: str, dataset_key: str, filename: str) -> Path:
+    rel_path = normalize_filename(filename, dataset_key)
+    return RESULTS_PATH / arch / dataset_key / rel_path
+
+
+def apply_cmap(
+    x: np.ndarray,
+    cmap: str,
+    white_mask: np.ndarray | None = None,
+) -> np.ndarray:
+    if x.ndim != 2:
+        raise ValueError(f"Expected a 2D array, got shape {x.shape}")
+
+    colors = get_color_definitions(cmap)
+    y = np.full((x.shape[0], x.shape[1], 3), fill_value=255, dtype=np.uint8)
+
+    for class_id, _, rgb in colors:
+        y[x == class_id] = rgb
+
+    if white_mask is not None:
+        white_mask = np.asarray(white_mask)
+        if white_mask.shape != x.shape:
+            raise ValueError(
+                f"white_mask must have shape {x.shape}, got {white_mask.shape}"
+            )
+        y[white_mask] = np.array([255, 255, 255], dtype=np.uint8)
+
+    return y
+
+
+def save_png(
+    mask: np.ndarray,
+    out_path: Path,
+    cmap: str,
+    white_mask: np.ndarray | None = None,
+) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    rgb = apply_cmap(np.asarray(mask), cmap, white_mask=white_mask)
+    Image.fromarray(rgb).save(out_path)
 
 
 def iter_patch_dirs(root: Path) -> Iterable[Path]:
@@ -188,11 +209,22 @@ def merge_tif_list(tif_files: list[Path], output_path: Path) -> None:
             src.close()
 
 
-def save_merged_png_from_tif(input_tif: Path, output_png: Path, cmap: str) -> None:
+def save_merged_png_from_tif(
+    input_tif: Path,
+    output_png: Path,
+    cmap: str,
+    gt_tif: Path | None = None,
+) -> None:
     with rasterio.open(input_tif) as src:
         arr = src.read(1)
 
-    save_png(arr, output_png, cmap)
+    white_mask = None
+    if gt_tif is not None and gt_tif.exists():
+        with rasterio.open(gt_tif) as src:
+            gt = src.read(1)
+        white_mask = (gt == 0) | (gt == NODATA_VALUE)
+
+    save_png(arr, output_png, cmap, white_mask=white_mask)
 
 
 def save_merged_difference_png(
@@ -236,6 +268,7 @@ def save_merged_patches(arch: str, dataset_key: str, cmap: str) -> None:
         pred_out_tif = merged_group_dir / "pred.tif"
         truth_out_tif = merged_group_dir / "truth.tif"
         pred_out_png = merged_group_dir / "pred.png"
+        pred_unk_out_png = merged_group_dir / "pred_unk.png"
         truth_out_png = merged_group_dir / "truth.png"
         diff_out_png = merged_group_dir / "diff.png"
 
@@ -244,6 +277,14 @@ def save_merged_patches(arch: str, dataset_key: str, cmap: str) -> None:
 
         if pred_out_tif.exists():
             save_merged_png_from_tif(pred_out_tif, pred_out_png, cmap)
+
+        if pred_out_tif.exists() and truth_out_tif.exists():
+            save_merged_png_from_tif(
+                pred_out_tif,
+                pred_unk_out_png,
+                cmap,
+                gt_tif=truth_out_tif,
+            )
 
         if truth_out_tif.exists():
             save_merged_png_from_tif(truth_out_tif, truth_out_png, cmap)

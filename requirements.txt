@@ -1,4 +1,5 @@
 einops
+fvcore
 kaggle
 matplotlib
 monai==1.5.2

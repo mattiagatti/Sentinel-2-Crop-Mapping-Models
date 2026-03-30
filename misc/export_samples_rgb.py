@@ -1,11 +1,11 @@
 import argparse
 import random
+import shutil
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
-from matplotlib.patches import Patch
 from PIL import Image
 from tqdm import tqdm
 
@@ -66,7 +66,7 @@ def get_patch_dirs(args):
 
         return patch_dirs, root
 
-    elif args.dataset == "munich":
+    if args.dataset == "munich":
         root = args.munich_root
 
         patch_dirs = []
@@ -80,8 +80,12 @@ def get_patch_dirs(args):
 
         return patch_dirs, root
 
-    else:
-        raise ValueError(f"Unsupported dataset: {args.dataset}")
+    raise ValueError(f"Unsupported dataset: {args.dataset}")
+
+
+def has_enough_time_steps(patch_dir: Path, min_steps: int = 32) -> bool:
+    tif_files = list(patch_dir.glob("*_10m.tif"))
+    return len(tif_files) >= min_steps
 
 
 def sample_dirs(dirs, percentage, seed):
@@ -98,7 +102,7 @@ def sample_dirs(dirs, percentage, seed):
 
 def to_uint8(rgb):
     rgb = np.clip(rgb, 0, 10000) / 10000.0
-    rgb = np.power(rgb, 0.5)  # gamma correction
+    rgb = np.power(rgb, 0.5)
     rgb = rgb * 255.0
     return rgb.astype(np.uint8)
 
@@ -122,38 +126,56 @@ def convert_tif(tif_path, png_path, dataset):
 def save_legend_pdf(dataset, out_path):
     colors = MUNICH_COLORS if dataset == "munich" else LOMBARDIA_COLORS
 
-    handles = [
-        Patch(
-            facecolor=tuple(c / 255.0 for c in rgb),
-            edgecolor="none",
-            label=class_name,
-        )
-        for _, class_name, rgb in colors
-    ]
+    n_items = len(colors)
+    n_cols = n_items
 
-    n_rows = int(np.ceil(len(handles) / 2))
-    fig_height = max(2.0, 0.38 * n_rows + 0.6)
+    cell_w = 1.2
+    cell_h = 2.2
+    square_size = 0.9
 
-    fig, ax = plt.subplots(figsize=(7.0, fig_height))
+    fig_w = n_cols * cell_w
+    fig_h = cell_h
+
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    ax.set_xlim(0, fig_w)
+    ax.set_ylim(0, fig_h)
     ax.axis("off")
 
-    ax.legend(
-        handles=handles,
-        loc="center",
-        frameon=False,
-        ncol=2,
-        fontsize=11,
-        handlelength=1.0,
-        handleheight=1.0,
-        handletextpad=0.6,
-        columnspacing=1.6,
-        labelspacing=0.5,
-        borderpad=0.2,
-    )
+    for idx, (_, class_name, rgb) in enumerate(colors):
+        x_center = idx * cell_w + cell_w / 2
+        y_top = fig_h - 0.4
+
+        square = plt.Rectangle(
+            (x_center - square_size / 2, y_top - square_size),
+            square_size,
+            square_size,
+            facecolor=tuple(c / 255.0 for c in rgb),
+            edgecolor="black",
+            linewidth=0.8,
+        )
+        ax.add_patch(square)
+
+        ax.text(
+            x_center,
+            y_top - square_size - 0.15,
+            class_name,
+            ha="center",
+            va="top",
+            fontsize=9,
+        )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
+
+
+def get_selected_time_files(patch_dir: Path):
+    tif_files = sorted(patch_dir.glob("*_10m.tif"))
+
+    wanted_indices = [0, 7, 15, 31]
+    wanted_names = ["t1", "t8", "t16", "t32"]
+
+    return [(tif_files[i], wanted_names[j]) for j, i in enumerate(wanted_indices)]
 
 
 def main():
@@ -163,32 +185,40 @@ def main():
     if not patch_dirs:
         raise RuntimeError("No patch folders found")
 
-    selected = sample_dirs(patch_dirs, args.percentage, args.seed)
+    valid_patch_dirs = [p for p in patch_dirs if has_enough_time_steps(p, min_steps=32)]
+    skipped = len(patch_dirs) - len(valid_patch_dirs)
+
+    if not valid_patch_dirs:
+        raise RuntimeError("No valid patch folders found with at least 32 temporal files")
+
+    selected = sample_dirs(valid_patch_dirs, args.percentage, args.seed)
 
     print(f"Dataset: {args.dataset}")
     print(f"Total patches: {len(patch_dirs)}")
+    print(f"Valid patches (>=32 timestamps): {len(valid_patch_dirs)}")
+    print(f"Skipped patches (<32 timestamps): {skipped}")
     print(f"Selected: {len(selected)}")
 
     dataset_out_dir = args.output_dir / args.dataset
 
-    # create legend
+    if dataset_out_dir.exists():
+        shutil.rmtree(dataset_out_dir)
+    
+    dataset_out_dir.mkdir(parents=True, exist_ok=True)
+
     save_legend_pdf(args.dataset, dataset_out_dir / "legend.pdf")
 
     for patch_dir in tqdm(selected):
-        tif_files = sorted(patch_dir.glob("*_10m.tif"))
-        y_path = patch_dir / "y.tif"
-        if y_path.exists():
-            tif_files.append(y_path)
-
-        if not tif_files:
-            continue
-
         rel = patch_dir.relative_to(root)
         out_dir = dataset_out_dir / rel
 
-        for tif_path in tif_files:
-            png_path = out_dir / f"{tif_path.stem}.png"
+        for tif_path, out_name in get_selected_time_files(patch_dir):
+            png_path = out_dir / f"{out_name}.png"
             convert_tif(tif_path, png_path, args.dataset)
+
+        y_path = patch_dir / "y.tif"
+        if y_path.exists():
+            convert_tif(y_path, out_dir / "y.png", args.dataset)
 
 
 if __name__ == "__main__":

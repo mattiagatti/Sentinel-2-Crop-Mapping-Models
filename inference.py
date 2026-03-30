@@ -116,7 +116,7 @@ def build_inference_dataset(args):
                 seqlength=32,
                 tileids=Path("tileids") / "testA.tileids",
             )
-            label_root_dir = data_dir / "lombardia3"
+            label_root_dir = data_dir
 
         elif args.test_id == "Y":
             dataset = LombardiaDataset(
@@ -151,7 +151,8 @@ def build_loader(dataset, batch_size):
 def resolve_weights_path(args):
     if args.weights_path is not None:
         return args.weights_path
-    return Path("weights") / f"{args.arch}_{args.dataset}.pt"
+
+    return Path("exp") / args.arch / args.dataset / "train" / "weights" / "best.pt"
 
 
 def load_weights(path, model, device):
