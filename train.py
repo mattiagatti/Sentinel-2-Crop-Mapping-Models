@@ -26,6 +26,7 @@ from zoo.deeplabv3_3d import DeepLabV3_3D
 from zoo.fpn_3d import FPN_3D
 from zoo.swin_unetr import SwinUNETRTemporal
 from zoo.unet_3d import UNet_3D
+from zoo.vistaformer import VistaFormer
 
 
 def parse_args():
@@ -43,7 +44,7 @@ def parse_args():
         "--arch",
         type=str,
         default="swin_unetr",
-        choices=["deeplabv3", "fpn", "swin_unetr", "unet"],
+        choices=["deeplabv3", "fpn", "swin_unetr", "unet", "vistaformer"],
     )
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument(
@@ -142,6 +143,22 @@ def build_model(arch, depth, in_channels, out_classes, class_weights=None, ignor
             depth=depth,
             in_channels=in_channels,
             out_classes=out_classes,
+        )
+    elif arch == "vistaformer":
+        model = VistaFormer(
+            in_channels=in_channels,
+            input_dim=48,
+            num_classes=out_classes,
+            depths=[1, 1, 1],
+            embed_dims=[32, 64, 128],
+            seq_lens=[depth // 2, depth // 4, depth // 8],
+            patch_sizes=[2, 2, 2],
+            strides=[2, 2, 2],
+            num_heads=[4, 8, 8],
+            mlp_mult=4,
+            gate=True,
+            head_conv_dim=64,
+            head_temporal_agg_type="conv",
         )
     else:
         raise ValueError(f"Unsupported architecture: {arch}")

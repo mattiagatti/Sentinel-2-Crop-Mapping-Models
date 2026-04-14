@@ -7,5 +7,6 @@ numpy
 Pillow
 rasterio
 scikit-learn
-torch
+timm
+torch==2.4.1
 tqdm
